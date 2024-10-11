@@ -42,7 +42,11 @@ def parse_weekday(value: str) -> Weekday:
             error(f"Invalid weekday, expected Mon/Tue/Wed/Thu/Fri/Sat/Sun, got '{value}'")
 
 # Returns [((Sun, 13.5), ["Student A", "Student B"])]
-def process(data: dict) -> list[tuple[tuple[Weekday, float], list[str]]]:
+def process(data: dict, amount: int) -> list[tuple[tuple[Weekday, float], list[str]]]:
+    """
+    Given data with students' available time slots and an amount of time slots to pick,
+    returns up to 'amount' time slots where each student is available in at least one of them.
+    """
     if "students" not in data or not isinstance(data["students"], dict):
         error(f"Expected 'students' as top-level dictionary in data")
 
@@ -85,7 +89,7 @@ def process(data: dict) -> list[tuple[tuple[Weekday, float], list[str]]]:
                     found_cover_keys.add(slot)
                     found_cover.append((slot, sorted(available)))
 
-                while len(found_cover_keys) < 3 and len(all_slots) > 0:
+                while len(found_cover_keys) < amount and len(all_slots) > 0:
                     # Fill missing slots arbitrarily
                     new_slot = all_slots.pop()
                     if new_slot not in found_cover_keys:
@@ -94,36 +98,45 @@ def process(data: dict) -> list[tuple[tuple[Weekday, float], list[str]]]:
                 return sorted(found_cover, key=lambda x: x[0])
         return None
 
-    # First pass: find a slot with everyone
-    res = search_combinatorial_pass(1)
+    n = 1
+    res = None
 
-    # Second pass: search all pairs of slots
-    if res is None:
-        res = search_combinatorial_pass(2)
-
-    # Third pass: search all triples of slots (slowest)
-    if res is None:
-        res = search_combinatorial_pass(3)
+    while res is None and n <= amount:
+        # On each pass, search for more slots at once (slower)
+        # This is O(binom(student amount, amount))
+        res = search_combinatorial_pass(n)
+        n += 1
 
     if res is None:
         res = []
 
     return res
 
+def positive_int(value: str) -> int:
+    try:
+        integer = int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"invalid integer '{value}'")
+
+    if integer <= 0:
+        raise argparse.ArgumentTypeError(f"expected positive integer, got {value}")
+    return integer
+
 def main():
     parser = argparse.ArgumentParser(
-        description="Pick N time slots where everyone is available."
+        description="Pick N time slots such that everyone is available in at least one of them."
     )
     parser.add_argument("data", help="TOML data file with available time slots", type=argparse.FileType("rb"))
+    parser.add_argument("-n", "--amount", metavar="N", type=positive_int, default=3, help="Amount of time slots to pick (default: 3)")
     res = parser.parse_args()
 
     tom: dict
     with res.data as f:
         tom = tomllib.load(res.data)
 
-    slots = process(tom)
+    slots = process(tom, res.n if "n" in res else res.amount if "amount" in res else 3)
     if slots == []:
-        error("There are no shared slots between the students.")
+        error("There aren't enough shared slots between the students.")
     else:
         for i, ((weekday, time), students) in enumerate(slots):
             formatted_time = f"{int(time)}:30" if time % 1 == 0.5 else f"{int(time)}:00"
