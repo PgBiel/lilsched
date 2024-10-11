@@ -1,0 +1,27 @@
+[students.jason]
+slots = [
+    { weekday = "Wed", slot = 12.0 },
+    { weekday = "Wed", slot = 14.0 },
+    { weekday = "Thu", slot = 14.0 }
+]
+
+[students.mary]
+slots = [
+    { weekday = "Mon", slot = 11.0 },
+    { weekday = "Wed", slot = 14.0 },
+    { weekday = "Thu", slot = 15.0 }
+]
+
+[students.peter]
+slots = [
+    { weekday = "Thu", slot = 11.0 },
+    { weekday = "Wed", slot = 10.5 },
+    { weekday = "Fri", slot = 15.0 }
+]
+
+[students.jacob]
+slots = [
+    { weekday = "Tue", slot = 11.0 },
+    { weekday = "Thu", slot = 14.0 },
+    { weekday = "Fri", slot = 15.0 }
+]
